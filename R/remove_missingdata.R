@@ -32,5 +32,5 @@ remove_missingdata <- function(data)
   idxs[idx] <- FALSE
   data <- data[idxs,]
   
-  return(data)
+  return(idxs)
 }

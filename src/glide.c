@@ -193,6 +193,159 @@ void generate_modlematrix(int nrow,
     free(resmat1);
 }
 
+void compute_cormat_col(int *nsnp,
+                     int *n_subject,
+		     int *colnumber,
+                     int *ncol_xmat,
+                     double *v_yfit,
+                     double *v_y,
+                     double *v_xmat,
+                     double *v_genotype,
+                     double *v_cormat_col) {
+    int i,j,ii,jj;
+    int n_cor=*ncol_xmat+1; //size of xmat1 and xmat2 with a snp
+    double *v_xmat1,*v_xmat2,*v_xmat1t,*v_xmat2t;
+    v_xmat1=double_vec(*n_subject*n_cor);
+    v_xmat2=double_vec(*n_subject*n_cor);
+    v_xmat1t=double_vec(*n_subject*n_cor);
+    v_xmat2t=double_vec(*n_subject*n_cor);
+    double *v_xmat_yfit_1_yfit;
+    v_xmat_yfit_1_yfit=double_vec(*n_subject*n_cor);
+    double *bread1,*bread2,*bread,*inv_bread;
+    bread1=double_vec(n_cor*n_cor);
+    bread2=double_vec(n_cor*n_cor);
+    bread=double_vec(4*n_cor*n_cor);
+    inv_bread=double_vec(4*n_cor*n_cor);
+    double *score1,*score2,*score,*scoret;
+    score=double_vec(*n_subject*2*n_cor);
+    scoret=double_vec((*n_subject)*2*n_cor);
+    score1=double_vec(*n_subject*n_cor);
+    score2=double_vec(*n_subject*n_cor);
+    double *beef;
+    beef=double_vec(4*n_cor*n_cor);
+    double *inv_bread_beef;
+    inv_bread_beef=double_vec(4*n_cor*n_cor);
+    double *v_covmat;
+    v_covmat=double_vec(4*n_cor*n_cor);
+    
+    int count=0;
+    char optc='C'; //by col
+    char optr='R'; //by row
+
+    double *v_yfit_1_yfit=double_vec(*n_subject);
+    double *v_y_yfit=double_vec(*n_subject);
+    
+FILE *file; /////
+    for (i=0;i<*n_subject;i++)
+    {
+        v_yfit_1_yfit[i]=v_yfit[i]*(1-v_yfit[i]);
+        v_y_yfit[i]=v_y[i]-v_yfit[i];
+    }
+    
+    i=*colnumber-1; //for specific column
+//    for (i=0;i<*nsnp-1;i++)
+    //for (i=0;i<1;i++)
+//    {
+        for (j=i+1;j<*nsnp;j++)
+	//for (j=1;j<4;j++)
+        {
+            generate_modlematrix(*n_subject,*ncol_xmat,v_xmat,v_genotype,i,optc,v_xmat1);
+            generate_modlematrix(*n_subject,*ncol_xmat,v_xmat,v_genotype,i,optr,v_xmat1t);
+            generate_modlematrix(*n_subject,*ncol_xmat,v_xmat,v_genotype,j,optc,v_xmat2);
+            generate_modlematrix(*n_subject,*ncol_xmat,v_xmat,v_genotype,j,optr,v_xmat2t);
+
+            multiplicationbyrow(v_xmat1,*n_subject,n_cor,v_yfit_1_yfit,v_xmat_yfit_1_yfit);
+            mydgemm(n_cor,n_cor,*n_subject,v_xmat1t,v_xmat_yfit_1_yfit,bread1);
+
+            multiplicationbyrow(v_xmat2,*n_subject,n_cor,v_yfit_1_yfit,v_xmat_yfit_1_yfit);
+            mydgemm(n_cor,n_cor,*n_subject,v_xmat2t,v_xmat_yfit_1_yfit,bread2);
+            
+            //combine bread1 and bread2
+            count=0;
+            for (ii=0;ii<n_cor;ii++)
+            {
+                for (jj=0;jj<n_cor;jj++)
+                {
+                    bread[count]=bread1[ii*n_cor+jj];
+                    count++;
+                }
+                count=count+n_cor;
+            }
+            for (ii=0;ii<n_cor;ii++)
+            {
+                count=count+n_cor;
+                for (jj=0;jj<n_cor;jj++)
+                {
+                    bread[count]=bread2[ii*n_cor+jj];
+                    count++;
+                }
+            }
+            dqrinv(bread, n_cor*2, pow(10,-8), inv_bread);
+            
+            multiplicationbyrow(v_xmat1,*n_subject,n_cor,v_y_yfit,score1);
+            multiplicationbyrow(v_xmat2,*n_subject,n_cor,v_y_yfit,score2);
+            //cbind score1 and score2
+            for (count=0;count<(*n_subject)*2*n_cor;count++)
+            {
+                if (count<(*n_subject)*n_cor)
+                {
+                    score[count]=score1[count];
+                }else
+                {
+                    score[count]=score2[count-(*n_subject)*n_cor];
+                }
+            }
+            //transpose
+            for (ii=0;ii<*n_subject;ii++)
+            {
+                for (jj=0;jj<2*n_cor;jj++)
+                {
+                    scoret[ii*2*n_cor+jj]=score[jj*(*n_subject)+ii];
+                }
+            }
+
+            
+            mydgemm(2*n_cor,2*n_cor,*n_subject,scoret,score,beef);
+            mydgemm(2*n_cor,2*n_cor,2*n_cor,inv_bread,beef,inv_bread_beef);
+            mydgemm(2*n_cor,2*n_cor,2*n_cor,inv_bread_beef,inv_bread,v_covmat);
+            
+//            v_cormat[i*(*nsnp)+j]=v_cormat[j*(*nsnp)+i]=v_covmat[(n_cor+2)*(2*n_cor)+2]/sqrt(v_covmat[2*2*n_cor+2]*v_covmat[(n_cor+2)*2*n_cor+n_cor+2]);
+	    v_cormat_col[j]=v_covmat[(n_cor+2)*(2*n_cor)+2]/sqrt(v_covmat[2*2*n_cor+2]*v_covmat[(n_cor+2)*2*n_cor+n_cor+2]);
+            //printf("%d %d %f\n",i,j,v_cormat[i*(*nsnp)+j]);    
+        }
+//    }
+  
+    //file = fopen("debug.txt", "w");
+    //print_vector_double(v_xmat_yfit_1_yfit,*n_subject*n_cor,file);
+    //print_vector_double(bread1,n_cor*n_cor,file);
+    //print_vector_double(v_cormat,*nsnp*(*nsnp),file);
+    //fclose(file);  
+    free(v_yfit_1_yfit);
+    free(v_y_yfit);    
+    free(v_xmat1);
+    free(v_xmat1t);
+    free(v_xmat2);
+    free(v_xmat2t);
+    free(v_xmat_yfit_1_yfit);
+    free(bread1);
+    free(bread2);
+    free(bread);
+    free(inv_bread);
+    free(score);
+    free(scoret);
+    free(score1);
+    free(score2);
+    free(beef);
+    free(inv_bread_beef);
+    free(v_covmat);
+
+    //printf("%s","\n");
+ 
+    
+}
+
+
+
 void compute_cormat(int *nsnp,
                      int *n_subject,
                      int *ncol_xmat,

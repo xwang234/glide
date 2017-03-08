@@ -8,7 +8,7 @@ A function to perform global and individual tests for direct effects
 A function to perform global and individual tests for direct effects
 }
 \usage{
-glide(data, genotype_columns = NULL, adjusting_covariate_columns = NULL, outcome_column = NULL, coeff = NULL, np = 1e+05, qcutoff = 0.2)
+glide(data, genotype_columns = NULL, adjusting_covariate_columns = NULL, outcome_column = NULL, coeff = NULL, np = 1e+05, qcutoff = 0.2, parallel = FALSE, verbose = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -33,7 +33,12 @@ A integer for the number of permutation used to compute q-values.
   \item{qcutoff}{
 A integer for the q-value cutoff.
 }
-
+  \item{parallel}{
+If TRUE, use parallel foreach to speed up computation. Must register parallel before hand, such as doMC or others. See the example below.
+}
+  \item{verbose}{
+If TRUE, print time-spending info.
+}
 }
 \details{
 
@@ -61,6 +66,10 @@ genotype_columns=which(colnames(dat) \%in\% names(coeff))
 adjusting_covariate_columns=which(colnames(dat) \%in\% c("pc1","pc2","pc3","age_ref","sex","gecco_study"))
 outcome_column=which(colnames(dat)=="outcome")
 result=glide(data=dat,genotype_columns=genotype_columns,adjusting_covariate_columns=adjusting_covariate_columns,outcome_column=outcome_column,coeff=coeff)
+#Parallel
+library(doMC)
+registerDoMC(cores=4)
+result=glide(data=dat,genotype_columns=genotype_columns,adjusting_covariate_columns=adjusting_covariate_columns,outcome_column=outcome_column,coeff=coeff,parallel=T)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

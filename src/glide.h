@@ -4,7 +4,7 @@ void print_matrix_double(double **m, int nrow, int ncol, FILE *file);
 //double **generate_modlematrix(double **xmat,double *genotype);
 void generate_modlematrix(int nrow,int ncol,double *v_xmat,double *v_genotype,int col,char opt, double *resmat);
 void compute_cormat(int *nsnp,int *n_subject,int *ncol_xmat,double *v_yfit,double *v_y,double *v_xmat,double *v_genotype,double *v_cormat);
-void compute_cormat(int *nsnp,int *n_subject,int *ncol_xmat,double *v_yfit,double *v_y,double *v_xmat,double *v_genotype,double *v_cormat);
+void compute_cormat_col(int *nsnp,int *n_subject,int *colnumber,int *ncol_xmat,double *v_yfit,double *v_y,double *v_xmat,double *v_genotype,double *v_cormat_col);
 static void errmsg(char *string);
 double **double_vec_to_mat(double *Yvec, int nrow, int ncol, char opt);
 double *double_mat_to_vec(double **Ymat, int nrow, int ncol,char opt);

@@ -2,7 +2,7 @@
 \alias{remove_missingdata}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-A function used in acoarm to remove missing data
+A function used to remove missing data
 }
 \description{
 It is used to remove samples which have NA/missing data in covariates.

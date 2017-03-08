@@ -2,4 +2,5 @@ useDynLib(GLIDE)
 importFrom("stats", "as.formula", "binomial", "formula", "glm",
              "model.matrix","rnorm","pnorm")
 importFrom("MASS", "ginv")
-export(glide,remove_missingdata)
+import(foreach)
+export(glide,glide_plot,remove_missingdata)
