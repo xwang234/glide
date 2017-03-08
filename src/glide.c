@@ -5,9 +5,10 @@
 # include <Rmath.h>
 # include <math.h>
 # include <string.h>
+# include "glide.h"
 # include <R_ext/Lapack.h>
 # include <R_ext/BLAS.h>
-# include "glide.h"
+
 
 //void myrnorm(int n,double miu,double sigma, double *z)
 void compute_z(int *nsnp,
@@ -33,14 +34,14 @@ void compute_z(int *nsnp,
     count1=*np; //index of zsim
 
     int m=*nsnp;
-    printf("\n%s %d %s\n","compute zcores, total",*nsnp,"iterations...");
+    //printf("\n%s %d %s\n","compute zcores, total",*nsnp,"iterations...");
     for (i=1;i<m;i++)
     {      
-	if (i % 10 ==0)
-        {
-            printf("%d %s",i,"...");
-            fflush(stdout);
-        }
+	//if (i % 10 ==0)
+     //   {
+     //       printf("%d %s",i,"...");
+     //       fflush(stdout);
+    //    }
         count=0;
         for (ii=0;ii<i;ii++)
         {
@@ -86,14 +87,14 @@ void compute_z(int *nsnp,
         }
     }
    
-    printf("\n%s\n","Compute p-values...");
+   // printf("\n%s\n","Compute p-values...");
  
     for (i=0;i<*nsnp*(*np);i++)
     {
         vect1[i]=2*(1-pnorm(fabs(zsim[i]),0,1,1,0));         //zsim[,k]=2*(1-pnorm(abs(zsim[,k])))
     }
 
-    printf("%s\n","Sort p-values...");
+    //printf("%s\n","Sort p-values...");
     //zsim[k,] <- zsim[k,order(zsim[k,])]
 
 //    count1=0;
@@ -140,11 +141,11 @@ void compute_z(int *nsnp,
     //print_vector_double(mu,*np,file);
     //fclose(file);
 
-   free(mu);
-   free(vect1);
-   free(vect3);
-   free(vect4);
-   free(inv_cormat); 
+   Free(mu);
+   Free(vect1);
+   Free(vect3);
+   Free(vect4);
+   Free(inv_cormat); 
 }
 
                
@@ -159,8 +160,10 @@ void generate_modlematrix(int nrow,
     
     //printf("%d\t%d\n",*n_subject,*ncol_xmat);
     double *resmat1;
+	
     resmat1=double_vec(nrow*(ncol+1));
     int i,j,count;
+	
     for(count=0;count<nrow*(ncol+1);count++)
     {
         if (count<2*nrow)
@@ -174,6 +177,7 @@ void generate_modlematrix(int nrow,
             resmat1[count]=v_xmat[count-nrow];
         }
     }
+	
     if (opt == 'r' || opt =='R') //transpoes
     {
         for (i=0;i<nrow;i++)
@@ -190,7 +194,8 @@ void generate_modlematrix(int nrow,
             resmat[count]=resmat1[count];
         }
     }
-    free(resmat1);
+	
+    Free(resmat1);
 }
 
 void compute_cormat_col(int *nsnp,
@@ -235,7 +240,7 @@ void compute_cormat_col(int *nsnp,
     double *v_yfit_1_yfit=double_vec(*n_subject);
     double *v_y_yfit=double_vec(*n_subject);
     
-FILE *file; /////
+//FILE *file; /////
     for (i=0;i<*n_subject;i++)
     {
         v_yfit_1_yfit[i]=v_yfit[i]*(1-v_yfit[i]);
@@ -310,7 +315,7 @@ FILE *file; /////
             mydgemm(2*n_cor,2*n_cor,2*n_cor,inv_bread_beef,inv_bread,v_covmat);
             
 //            v_cormat[i*(*nsnp)+j]=v_cormat[j*(*nsnp)+i]=v_covmat[(n_cor+2)*(2*n_cor)+2]/sqrt(v_covmat[2*2*n_cor+2]*v_covmat[(n_cor+2)*2*n_cor+n_cor+2]);
-	    v_cormat_col[j]=v_covmat[(n_cor+2)*(2*n_cor)+2]/sqrt(v_covmat[2*2*n_cor+2]*v_covmat[(n_cor+2)*2*n_cor+n_cor+2]);
+			v_cormat_col[j]=v_covmat[(n_cor+2)*(2*n_cor)+2]/sqrt(v_covmat[2*2*n_cor+2]*v_covmat[(n_cor+2)*2*n_cor+n_cor+2]);
             //printf("%d %d %f\n",i,j,v_cormat[i*(*nsnp)+j]);    
         }
 //    }
@@ -320,24 +325,24 @@ FILE *file; /////
     //print_vector_double(bread1,n_cor*n_cor,file);
     //print_vector_double(v_cormat,*nsnp*(*nsnp),file);
     //fclose(file);  
-    free(v_yfit_1_yfit);
-    free(v_y_yfit);    
-    free(v_xmat1);
-    free(v_xmat1t);
-    free(v_xmat2);
-    free(v_xmat2t);
-    free(v_xmat_yfit_1_yfit);
-    free(bread1);
-    free(bread2);
-    free(bread);
-    free(inv_bread);
-    free(score);
-    free(scoret);
-    free(score1);
-    free(score2);
-    free(beef);
-    free(inv_bread_beef);
-    free(v_covmat);
+    Free(v_yfit_1_yfit);
+    Free(v_y_yfit);    
+    Free(v_xmat1);
+    Free(v_xmat1t);
+    Free(v_xmat2);
+    Free(v_xmat2t);
+    Free(v_xmat_yfit_1_yfit);
+    Free(bread1);
+    Free(bread2);
+    Free(bread);
+    Free(inv_bread);
+    Free(score);
+    Free(scoret);
+    Free(score1);
+    Free(score2);
+    Free(beef);
+    Free(inv_bread_beef);
+    Free(v_covmat);
 
     //printf("%s","\n");
  
@@ -387,22 +392,22 @@ void compute_cormat(int *nsnp,
     double *v_yfit_1_yfit=double_vec(*n_subject);
     double *v_y_yfit=double_vec(*n_subject);
     
-FILE *file; /////
+//FILE *file; /////
     for (i=0;i<*n_subject;i++)
     {
         v_yfit_1_yfit[i]=v_yfit[i]*(1-v_yfit[i]);
         v_y_yfit[i]=v_y[i]-v_yfit[i];
     }
     
-    printf("%s %d %s\n","Total", *nsnp, "iterations...");
+    //printf("%s %d %s\n","Total", *nsnp, "iterations...");
     for (i=0;i<*nsnp-1;i++)
     //for (i=0;i<1;i++)
     {
-        if (i % 10 ==0)
-        {
-            printf("%d %s",i,"...");
-            fflush(stdout);
-        }
+        //if (i % 10 ==0)
+        //{
+        //    printf("%d %s",i,"...");
+        //    fflush(stdout);
+        //}
         for (j=i+1;j<*nsnp;j++)
 	//for (j=1;j<4;j++)
         {
@@ -410,13 +415,11 @@ FILE *file; /////
             generate_modlematrix(*n_subject,*ncol_xmat,v_xmat,v_genotype,i,optr,v_xmat1t);
             generate_modlematrix(*n_subject,*ncol_xmat,v_xmat,v_genotype,j,optc,v_xmat2);
             generate_modlematrix(*n_subject,*ncol_xmat,v_xmat,v_genotype,j,optr,v_xmat2t);
-
             multiplicationbyrow(v_xmat1,*n_subject,n_cor,v_yfit_1_yfit,v_xmat_yfit_1_yfit);
             mydgemm(n_cor,n_cor,*n_subject,v_xmat1t,v_xmat_yfit_1_yfit,bread1);
 
             multiplicationbyrow(v_xmat2,*n_subject,n_cor,v_yfit_1_yfit,v_xmat_yfit_1_yfit);
-            mydgemm(n_cor,n_cor,*n_subject,v_xmat2t,v_xmat_yfit_1_yfit,bread2);
-            
+            mydgemm(n_cor,n_cor,*n_subject,v_xmat2t,v_xmat_yfit_1_yfit,bread2);  
             //combine bread1 and bread2
             count=0;
             for (ii=0;ii<n_cor;ii++)
@@ -437,10 +440,9 @@ FILE *file; /////
                     count++;
                 }
             }
-            dqrinv(bread, n_cor*2, pow(10,-8), inv_bread);
-            
+            dqrinv(bread, n_cor*2, pow(10,-8), inv_bread); 
             multiplicationbyrow(v_xmat1,*n_subject,n_cor,v_y_yfit,score1);
-            multiplicationbyrow(v_xmat2,*n_subject,n_cor,v_y_yfit,score2);
+			multiplicationbyrow(v_xmat2,*n_subject,n_cor,v_y_yfit,score2);
             //cbind score1 and score2
             for (count=0;count<(*n_subject)*2*n_cor;count++)
             {
@@ -480,26 +482,26 @@ FILE *file; /////
     //print_vector_double(bread1,n_cor*n_cor,file);
     //print_vector_double(v_cormat,*nsnp*(*nsnp),file);
     //fclose(file);  
-    free(v_yfit_1_yfit);
-    free(v_y_yfit);    
-    free(v_xmat1);
-    free(v_xmat1t);
-    free(v_xmat2);
-    free(v_xmat2t);
-    free(v_xmat_yfit_1_yfit);
-    free(bread1);
-    free(bread2);
-    free(bread);
-    free(inv_bread);
-    free(score);
-    free(scoret);
-    free(score1);
-    free(score2);
-    free(beef);
-    free(inv_bread_beef);
-    free(v_covmat);
+    Free(v_yfit_1_yfit);
+    Free(v_y_yfit);    
+    Free(v_xmat1);
+    Free(v_xmat1t);
+    Free(v_xmat2);
+    Free(v_xmat2t);
+    Free(v_xmat_yfit_1_yfit);
+    Free(bread1);
+    Free(bread2);
+    Free(bread);
+    Free(inv_bread);
+    Free(score);
+    Free(scoret);
+    Free(score1);
+    Free(score2);
+    Free(beef);
+    Free(inv_bread_beef);
+    Free(v_covmat);
 
-    printf("%s","\n");
+    //printf("%s","\n");
     //double a[5][3] = {{1,1,1},{2,3,4},{3,5,2},{4,2,5},{5,4,3}};
     //double a[5*3] = {1,2,3,4,5,1,3,5,2,4,1,4,2,5,3};
     //double a[3*5]={1,1,1,2,3,4,3,5,2,4,2,5,5,4,3};
@@ -684,12 +686,12 @@ void dqrinv(double *xvec, int n, double tol, double *outvec){
             count++;
         }
     }
-    free(pivot);
-    free(x);
-    free(y);
-    free(coef);
-    free(qraux);
-    free(work);
+    Free(pivot);
+    Free(x);
+    Free(y);
+    Free(coef);
+    Free(qraux);
+    Free(work);
 }
 
 

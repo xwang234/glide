@@ -66,10 +66,12 @@ genotype_columns=which(colnames(dat) \%in\% names(coeff))
 adjusting_covariate_columns=which(colnames(dat) \%in\% c("pc1","pc2","pc3","age_ref","sex","gecco_study"))
 outcome_column=which(colnames(dat)=="outcome")
 result=glide(data=dat,genotype_columns=genotype_columns,adjusting_covariate_columns=adjusting_covariate_columns,outcome_column=outcome_column,coeff=coeff)
+\dontrun{
 #Parallel
 library(doMC)
 registerDoMC(cores=4)
 result=glide(data=dat,genotype_columns=genotype_columns,adjusting_covariate_columns=adjusting_covariate_columns,outcome_column=outcome_column,coeff=coeff,parallel=T)
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

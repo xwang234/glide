@@ -10,8 +10,8 @@ Author: James Dai [aut, cre],
 	Xiaoyu Wang [aut]
 Maintainer: James Dai <jdai@fredhutch.org>
 Description: Global and Individual Tests for Direct Effects
-Imports: MASS
+Imports: MASS,foreach
 LazyLoad: no
 License: GPL (>= 2)
 NeedsCompilation: no
-Packaged: 2017-02-28 09:24:50 UTC; wang
+Packaged: 2017-03-08 09:55:04 UTC; yulin
