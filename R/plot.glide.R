@@ -18,6 +18,6 @@ plot.glide <- function(out,qcutoff=0.2)
     points(-log(out$expected_pvalue[1:length(selected_idx)],base=10),-log(out$observed_pvalue[order(out$observed_pvalue)][1:length(selected_idx)],base=10),col=2,pch=16,cex=1.4)
     legend("bottomright",legend="SNPs with evidence of direct effect by GLIDE",col=2,pch=16, cex=0.8)
   }
-  abline(0,1)
+  abline(0,1,lty=2)
   
 }

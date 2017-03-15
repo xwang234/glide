@@ -86,13 +86,14 @@ glide <- function(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
   {
     #detect the number of CPU cores in the current machine
     numberofcores=detectCores()
+    if (verbose) writeLines(paste0("\nThere are ",numberofcores," cores available in the machine."))
     #if there are not enough cores available
     if (corenumber>numberofcores) corenumber=numberofcores
-    #if there are much more cores available
+    #if there are much more cores available, use half of them
     if (2*corenumber<=numberofcores) corenumber=as.integer(numberofcores/2)
     registerDoMC(cores=corenumber)
-    if (verbose) writeLines(paste0("Use parallel computation with ",corenumber," cores..."))
-    #i=nsnp:1, do small jobs first to make sure the last jobs to finish in the last
+    if (verbose) writeLines(paste0("Start parallel computation using ",corenumber," cores..."))
+    #i=nsnp:1, do small jobs first to make sure the last job to finish in the last
     results <- foreach(i=nsnp:1,j=1:nsnp,.combine = data.frame, .packages = c("GLIDE")) %dopar%
     {
       #j measures the progress
