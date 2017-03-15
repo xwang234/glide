@@ -1,4 +1,4 @@
-glide_plot <- function(out,qcutoff=0.2)
+glide_plot <- function(out,qcutoff=0.2,xlable="Genetic effect for the exposure",ylable="Genetic effect for the outcome")
 {
   out=as.data.frame(out)
   
@@ -13,7 +13,7 @@ glide_plot <- function(out,qcutoff=0.2)
   selected_idx=which(out$q_value<=qcutoff)
   #draw plots
   par(mfrow=c(1,2))
-  plot(out$genetic_effect_exposure,out$genetic_effect_outcome,xlab="Genetic effect for the exposure",ylab="Genetic effect for the outcome")
+  plot(out$genetic_effect_exposure,out$genetic_effect_outcome,xlab=xlable,ylab=ylable)
   abline(bb[1],bb[2],lty=2)
   text(mean(par("usr")[1:2]),mean(par("usr")[3:4]),paste0("y=",format(bb[1],digits=2),"+",format(bb[2],digits=2),"*x"),cex=1.1)
   egger_pvalue=format(2*(1-pnorm(abs(bb[1,1])/sqrt(bbcov[1,1]))),digits = 2)

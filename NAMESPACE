@@ -3,4 +3,6 @@ importFrom("stats", "as.formula", "binomial", "formula", "glm",
              "model.matrix","rnorm","pnorm")
 importFrom("MASS", "ginv")
 import(foreach)
-export(glide,glide_plot,remove_missingdata)
+import(doMC)
+importFrom("parallel","detectCores")
+export(glide,plot.glide,plot.egger,remove_missingdata)

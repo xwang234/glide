@@ -2,18 +2,19 @@
 \alias{glide}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-A function to perform global and individual tests for direct effects
+A function to perform global and individual tests for assessing direct effects
 }
 \description{
-A function to perform global and individual tests for direct effects
+A function to perform global and individual tests for assessing direct effects
 }
 \usage{
-glide(data, genotype_columns = NULL, adjusting_covariate_columns = NULL, outcome_column = NULL, coeff = NULL, np = 1e+05, qcutoff = 0.2, parallel = FALSE, verbose = TRUE)
+glide(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
+                  outcome_column=NULL,exposure_coeff=NULL,np=100000,qcutoff=0.2,parallel=TRUE,corenumber=4,verbose=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{data}{
-A data frame used to access the following data.
+A data frame A data frame with following components.
 }
   \item{genotype_columns}{
 An integer vector, column indices of data in which genotyp data are stored.  
@@ -22,19 +23,22 @@ An integer vector, column indices of data in which genotyp data are stored.
 An integer vector, column indices of data in which adjusting covariates are stored.  
 }
   \item{outcome_column}{
-An integer, in which column of data the outcome is stored. 
+An integer, in which column of data the case-control outcome is stored. 
 }
-  \item{coeff}{
-A named mumeric vector for the external coefficients.
+  \item{exposure_coeff}{
+A named mumeric vector for the external coefficients for genotype-exposure associations.
 }
   \item{np}{
-A integer for the number of permutation used to compute q-values.
+A integer for the number of parametric simulations being generated compute q-values.
 }
   \item{qcutoff}{
-A integer for the q-value cutoff.
+A integer for the q-value cutoff to declare individual variant’s significance.
 }
   \item{parallel}{
-If TRUE, use parallel foreach to speed up computation. Must register parallel before hand, such as doMC or others. See the example below.
+If TRUE, use parallel foreach to speed up computation.
+}
+  \item{corenumber}{
+A integer to set the number of computer cores participating in parallel computation.
 }
   \item{verbose}{
 If TRUE, print time-spending info.
@@ -61,18 +65,11 @@ James Y. Dai and X. Wang
 ##load an example data
 data(BMI)
 dat$gecco_study=as.factor(dat$gecco_study)
-
-genotype_columns=which(colnames(dat) \%in\% names(coeff))
+genotype_columns=which(colnames(dat) \%in\% names(exposure_coeff))
 adjusting_covariate_columns=which(colnames(dat) \%in\% c("pc1","pc2","pc3","age_ref","sex","gecco_study"))
 outcome_column=which(colnames(dat)=="outcome")
-result=glide(data=dat,genotype_columns=genotype_columns,adjusting_covariate_columns=adjusting_covariate_columns,outcome_column=outcome_column,coeff=coeff)
-\dontrun{
-#Parallel
-library(doMC)
-registerDoMC(cores=4)
-result=glide(data=dat,genotype_columns=genotype_columns,adjusting_covariate_columns=adjusting_covariate_columns,outcome_column=outcome_column,coeff=coeff,parallel=T)
-}
+out=glide(data=dat,genotype_columns=genotype_columns,adjusting_covariate_columns=adjusting_covariate_columns,outcome_column=outcome_column,exposure_coeff=exposure_coeff)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{Direct Effects}
+\keyword{Causal Analysis,Direct Effects}

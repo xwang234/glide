@@ -25,7 +25,7 @@ remove_missingdata <- function(data)
     {
       missingcols=paste0(missingcols," ",colnames(data)[cols[i]])
     }
-    warning(paste0(length(idx), " rows were removed due to missing data in", missingcols))
+    writeLines(paste0("Warning message: ",length(idx), " rows were removed due to missing data in", missingcols))
   }
   
   idxs <- rep(TRUE,nrow(data))

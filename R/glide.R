@@ -1,6 +1,6 @@
 
 glide <- function(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
-                  outcome_column=NULL,coeff=NULL,np=100000,qcutoff=0.2,parallel=FALSE,verbose=TRUE)
+                  outcome_column=NULL,exposure_coeff=NULL,np=100000,qcutoff=0.2,parallel=TRUE,corenumber=4,verbose=TRUE)
 {
   gettime=function()
   {
@@ -12,50 +12,39 @@ glide <- function(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
   if(is.null(adjusting_covariate_columns)) 
     stop("column numbers of adjusting covariates must be provided!")
   if(is.null(outcome_column)) stop("column number of outcome must be provided!")
-  if(is.null(coeff)) stop("external coefficients  must be provided!")
-  if (length(coeff) != length(genotype_columns)) 
+  if(is.null(exposure_coeff)) stop("external coefficients  must be provided!")
+  if (length(exposure_coeff) != length(genotype_columns)) 
     stop("the number of genetypes are not consistent with the number of coefficients!")
-  if (sum(names(coeff) %in% colnames(data)[genotype_columns]) != length(coeff)) 
+  if (sum(names(exposure_coeff) %in% colnames(data)[genotype_columns]) != length(exposure_coeff)) 
     stop("names of genotypes in the dataframe are not consistant with names of coefficients!")
-  if (verbose) writeLines(paste0("program start at: ",gettime()))
+  if (verbose) writeLines(paste0("program starts at: ",gettime()))
   #remvoe rows containing NAs in the related columns
   idx=remove_missingdata(data[,c(genotype_columns,adjusting_covariate_columns,outcome_column)])
   data=data[idx,]
-  nsnp=length(coeff)
-  crc_coeff <- matrix(0,nsnp,3)
+  nsnp=length(exposure_coeff)
+  outcome_coeff <- matrix(0,nsnp,2)
   for (i in 1:nsnp){
-    fm=paste0(colnames(data)[outcome_column],"~",colnames(data)[which(colnames(data)==names(coeff)[i])])
+    fm=paste0(colnames(data)[outcome_column],"~",colnames(data)[which(colnames(data)==names(exposure_coeff)[i])])
     for (j in 1:length(adjusting_covariate_columns))
     {
       fm=paste0(fm,"+",colnames(data)[which(colnames(data)==colnames(data)[adjusting_covariate_columns[j]])])
     }
-    fit <- glm(as.formula(fm),family=poisson,data=data)
-    crc_coeff[i,1] <- fit$coef[2]
     fit <- glm(as.formula(fm),family=binomial,data=data)
-    crc_coeff[i,2] <- fit$coef[2]
+    outcome_coeff[i,1] <- fit$coef[2]
     #variance
-    crc_coeff[i,3] <- summary(fit)$coef[2,2]^2
+    outcome_coeff[i,2] <- summary(fit)$coef[2,2]^2
   }
-
-  yy <- crc_coeff[,2]
-  xx <- cbind(1,coeff)
-  ww <- diag(1/crc_coeff[,3])
-
-
-  bb <- solve(t(xx) %*% ww %*% xx) %*% t(xx) %*% ww %*% yy
-  bbcov<- solve(t(xx) %*% ww %*% xx)
-
 
   data$grs <- 0
   for (i in 1:nsnp){
-    k<- which(colnames(data)==names(coeff)[i])
-    data$grs <- data$grs + coeff[i]*data[,k]
+    k<- which(colnames(data)==names(exposure_coeff)[i])
+    data$grs <- data$grs + exposure_coeff[i]*data[,k]
   }
 
   outp <- rep(0,nsnp)
   for (i in 1:nsnp) {
-    k <- which(colnames(data)==names(coeff[i]))
-    fm=paste0(colnames(data)[outcome_column],"~grs+",colnames(data)[which(colnames(data)==names(coeff)[i])])
+    k <- which(colnames(data)==names(exposure_coeff[i]))
+    fm=paste0(colnames(data)[outcome_column],"~grs+",colnames(data)[which(colnames(data)==names(exposure_coeff)[i])])
     for (j in 1:length(adjusting_covariate_columns))
     {
       fm=paste0(fm,"+",colnames(data)[which(colnames(data)==colnames(data)[adjusting_covariate_columns[j]])])
@@ -77,12 +66,12 @@ glide <- function(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
   y <-fit$y #outcome
   xmat=model.matrix(as.formula(fm),data=data)
   grs=data$grs
-  #generate genotype matrix, which columns are consistent with coeff
-  data_genotype=data.frame(matrix(NA,nrow=nrow(data),ncol=length(coeff)))
-  colnames(data_genotype)=names(coeff)
-  for (i in 1:length(coeff))
+  #generate genotype matrix, which columns are consistent with exposure_coeff
+  data_genotype=data.frame(matrix(NA,nrow=nrow(data),ncol=length(exposure_coeff)))
+  colnames(data_genotype)=names(exposure_coeff)
+  for (i in 1:length(exposure_coeff))
   {
-    idx=which(colnames(data)==names(coeff)[i])
+    idx=which(colnames(data)==names(exposure_coeff)[i])
     data_genotype[,i]=data[,idx]
   }
   cormat <- matrix(1,nsnp,nsnp)
@@ -95,13 +84,21 @@ glide <- function(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
     
   if (parallel)
   {
-    if (verbose) writeLines("\nUse parallel computation...")
-
-    results <- foreach(i=1:nsnp,.combine = data.frame, .packages = c("GLIDE")) %dopar%
+    #detect the number of CPU cores in the current machine
+    numberofcores=detectCores()
+    #if there are not enough cores available
+    if (corenumber>numberofcores) corenumber=numberofcores
+    #if there are much more cores available
+    if (2*corenumber<=numberofcores) corenumber=as.integer(numberofcores/2)
+    registerDoMC(cores=corenumber)
+    if (verbose) writeLines(paste0("Use parallel computation with ",corenumber," cores..."))
+    #i=nsnp:1, do small jobs first to make sure the last jobs to finish in the last
+    results <- foreach(i=nsnp:1,j=1:nsnp,.combine = data.frame, .packages = c("GLIDE")) %dopar%
     {
-      if (verbose & (i %% 10 == 0))
+      #j measures the progress
+      if (verbose & (j %% 10 == 0))
       {
-        cat(i,"..")
+        cat(j,"..")
       }
       cormat_col=rep(0,nsnp)
       result <- .C("compute_cormat_col",
@@ -117,15 +114,17 @@ glide <- function(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
                    PACKAGE="GLIDE")
       result$cormat_col
     }
-    for (i in 1:nsnp) results[i,i]=1
+    for (i in 1:nsnp) cormat[,i]=results[,nsnp-i+1]
+
+    for (i in 1:nsnp) cormat[i,i]=1
     for (i in 1:(nsnp-1))
     {
       for (j in (i+1):nsnp)
       {
-        results[i,j]=results[j,i]
+        cormat[i,j]=cormat[j,i]
       }
     }
-    cormat=results
+    #cormat=results
     if (verbose) writeLines("\n")
   }else
   {
@@ -148,44 +147,7 @@ glide <- function(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
       }
     }
   }
-  # }else
-  # {
-  #   for (i in 1:(nsnp-1)){
-  #     cat(i,"..")
-  #     for (j in (i+1):nsnp) {
-  #       ii <- which(colnames(data)==names(coeff)[i])
-  #       jj <- which(colnames(data)==names(coeff)[j])
-  #       fm=paste0(colnames(data)[outcome_column],"~grs+",colnames(data)[ii])
-  #       for (k in 1:length(adjusting_covariate_columns))
-  #       {
-  #         fm=paste0(fm,"+",colnames(data)[which(colnames(data)==colnames(data)[adjusting_covariate_columns[k]])])
-  #       }
-  #       xmat1 <- model.matrix(as.formula(fm),data=data)
-  #       fm=paste0(colnames(data)[outcome_column],"~grs+",colnames(data)[jj])
-  #       for (k in 1:length(adjusting_covariate_columns))
-  #       {
-  #         fm=paste0(fm,"+",colnames(data)[which(colnames(data)==colnames(data)[adjusting_covariate_columns[k]])])
-  #       }
-  #       xmat2 <- model.matrix(as.formula(fm),data=data)
-  #       
-  #       xmat  <- cbind(xmat1,xmat2)
-  #       bread <- matrix(0,ncol(xmat),ncol(xmat))
-  #       bread1 <- t(xmat1)%*%(xmat1*drop(yfit*(1-yfit)))
-  #       bread2 <- t(xmat2)%*%(xmat2*drop(yfit*(1-yfit)))
-  #       
-  #       bread[1:ncol(xmat1),1:ncol(xmat1)] <- bread1
-  #       bread[(ncol(xmat2)+1):ncol(xmat),(ncol(xmat2)+1):ncol(xmat)] <- bread2
-  #       
-  #       score <- cbind(xmat1*drop(fit$y-yfit),xmat2*drop(fit$y-yfit))
-  #       beef <- t(score) %*% score
-  #       
-  #       covmat <- solve(bread) %*% beef %*% solve(bread)
-  # 
-  #       cormat[i,j] <- covmat[3,ncol(xmat1)+3]/sqrt(covmat[3,3]*covmat[ncol(xmat1)+3,ncol(xmat1)+3])
-  #       cormat[j,i] <- cormat[i,j]
-  #     }
-  #   }
-  # }
+  
   
   cormat=as.matrix(cormat)
   
@@ -226,14 +188,13 @@ glide <- function(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
   fwer <- rep(0,length(outp))
   qval <- rep(0,length(outp))
   for (i in 1:length(outp)) {
-    #temp <- apply(zsim <= rep(outp[i],np),1,sum)
     temp <- rowSums(zsim <= rep(outp[i],np))
     fwer[i] <- mean(temp>=1)
     qval[i] <- (sum(temp)/np)/sum(outp<=outp[i])
   }
   out <- matrix(0,nsnp,7)
   out[,1] <- outp
-  out[,2] <- orderp
+  out[,2] <- orderp[order(outp)]
   out[,3] <- fwer
   out[,4] <- qval
   qval <- rep(0,length(outp))
@@ -241,39 +202,14 @@ glide <- function(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
     qval[i] <- min(out[out[,1]>= out[i,1],4])
   }
   out[,4] <- qval
-  out[,5] <- coeff
-  out[,6:7] <- crc_coeff[,2:3]
-  colnames(out)=c("observed_pvalue","null_pvalue","fwer","q_value","genetic_effect_exposure",
-                  "genetic_effect_outcome","genetic_effect_outcome_variance")
-  rownames(out)=names(coeff)
+  out[,5] <- exposure_coeff
+  out[,6:7] <- outcome_coeff
+  colnames(out)=c("observed_pvalue","expected_pvalue","fwer","q_value","geffect_exposure",
+                  "geffect_outcome","geffect_outcome_variance")
+  rownames(out)=names(exposure_coeff)
   
-  if (verbose) writeLines(paste0("\nStart to draw plots at: ",gettime()))
-  glide_plot(out,qcutoff)
-  # selected_idx=which(qval<=qcutoff)
-  # #draw plots
-  # par(mfrow=c(1,2))
-  # plot(coeff,crc_coeff[,2],xlab="Genetic effect for the exposure",ylab="Genetic effect for the outcome")
-  # abline(bb[1],bb[2],lty=2)
-  # text(mean(par("usr")[1:2]),mean(par("usr")[3:4]),paste0("y=",format(bb[1],digits=2),"+",format(bb[2],digits=2),"*x"),cex=1.1)
-  # egger_pvalue=format(2*(1-pnorm(abs(bb[1,1])/sqrt(bbcov[1,1]))),digits = 2)
-  # text(mean(par("usr")[1:2]),mean(c(mean(par("usr")[3:4]),par("usr")[3])),paste0("p-value=",egger_pvalue),cex=1.1)
-  # #text(0.07,0.01,"y=0.001+0.25*x",cex=1.1)
-  # if (length(selected_idx)>0)
-  # {
-  #   points(coeff[selected_idx],crc_coeff[selected_idx,2],col=2,pch=16,cex=1.4)
-  #   legend("bottomright",legend="SNP with direct effect",col=2,pch=16)
-  # }
-  # 
-  # plot(-log(orderp,base=10),-log(outp[order(outp)],base=10),xlab="Expected null p-values (log base 10)",ylab="Observed p-values (log base 10)",type="n")
-  # points(-log(orderp,base=10),-log(outp[order(outp)],base=10),cex=1.4)
-  # 
-  # 
-  # if (length(selected_idx)>0)
-  # {
-  #   points(-log(orderp[1:length(selected_idx)],base=10),-log(outp[order(outp)][1:length(selected_idx)],base=10),col=2,pch=16,cex=1.4)
-  #   legend("bottomright",legend="SNP with direct effect",col=2,pch=16)
-  # }
-  # abline(0,1)
-  # par(mfrow=c(1,1))
+  if (verbose) writeLines(paste0("\nProgram ends at: ",gettime()))
+#  glide_plot(out,qcutoff)
+  
   return(out)
 }
