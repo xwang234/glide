@@ -8,25 +8,23 @@ A function to perform global and individual tests for assessing direct effects
 A function to perform global and individual tests for assessing direct effects
 }
 \usage{
-glide(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
-                  outcome_column=NULL,exposure_coeff=NULL,np=100000,qcutoff=0.2,parallel=TRUE,corenumber=4,verbose=TRUE)
+glide(formula,exposure_coeff=NULL,genotype_columns=NULL,data,
+np=100000,qcutoff=0.2,parallel=TRUE,corenumber=4,verbose=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{data}{
-A data frame A data frame with following components.
-}
-  \item{genotype_columns}{
-An integer vector, column indices of data in which genotyp data are stored.  
-}
-  \item{adjusting_covariate_columns}{
-An integer vector, column indices of data in which adjusting covariates are stored.  
-}
-  \item{outcome_column}{
-An integer, in which column of data the case-control outcome is stored. 
+  \item{formula}{
+A an object of class "formula": outcome ~ adusting covariates.
 }
   \item{exposure_coeff}{
-A named mumeric vector for the external coefficients for genotype-exposure associations.
+A named mumeric vector for the external coefficients for genotype-exposure associations. 
+All the names must be found in "genotype_columns" columns of data.
+}
+  \item{genotype_columns}{
+An integer vector, column indices of data in which genotype data are stored.  
+}
+  \item{data}{
+A data frame A data frame with following components.
 }
   \item{np}{
 A integer for the number of parametric simulations being generated compute q-values.
@@ -38,7 +36,7 @@ A integer for the q-value cutoff to declare individual variant’s significance.
 If TRUE, use parallel foreach to speed up computation.
 }
   \item{corenumber}{
-A integer to set the number of computer cores participating in parallel computation.
+A integer to set the number of computer cores used in parallel computation.
 }
   \item{verbose}{
 If TRUE, print time-spending info.
@@ -49,7 +47,7 @@ If TRUE, print time-spending info.
 }
 \value{
 %%  ~Describe the value returned
-A data frame containing observed p-value, expected null p-value,fwer,q-value of each genotype.
+A data frame containing observed p-value, expected null p-value,fwer,q-value of each snp.
 }
 \references{
 %% ~put references to the literature/web site here ~
@@ -62,13 +60,12 @@ James Y. Dai and X. Wang
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-##load an example data
+##load an example data; it includes a dataframe "dat" and a named numeric vector  "exposure_coeff"
 data(BMI)
-dat$gecco_study=as.factor(dat$gecco_study)
-genotype_columns=which(colnames(dat) \%in\% names(exposure_coeff))
-adjusting_covariate_columns=which(colnames(dat) \%in\% c("pc1","pc2","pc3","age_ref","sex","gecco_study"))
-outcome_column=which(colnames(dat)=="outcome")
-out=glide(data=dat,genotype_columns=genotype_columns,adjusting_covariate_columns=adjusting_covariate_columns,outcome_column=outcome_column,exposure_coeff=exposure_coeff)
+formula=as.formula("outcome~as.factor(gecco_study)+age_ref+sex+pc1+pc2+pc3")
+genotype_columns=which(grepl("^rs",colnames(dat)))
+out=glide(formula=formula,exposure_coeff=exposure_coeff,genotype_columns,data=dat,np=100000,qcutoff=0.2,parallel=TRUE,corenumber=4,verbose=TRUE)
+
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

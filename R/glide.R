@@ -1,66 +1,48 @@
 
-glide <- function(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
-                  outcome_column=NULL,exposure_coeff=NULL,np=100000,qcutoff=0.2,parallel=TRUE,corenumber=4,verbose=TRUE)
+glide <- function(formula,exposure_coeff=NULL,genotype_columns=NULL,data,
+                  np=100000,qcutoff=0.2,parallel=TRUE,corenumber=4,verbose=TRUE)
 {
   gettime=function()
   {
     thetime=Sys.time()
     thetime=as.character(structure(thetime,class=c('POSIXt','POSIXct')))
   }
-  #check dataframe
-  if(is.null(genotype_columns)) stop("column numbers of genotypes must be provided!")
-  if(is.null(adjusting_covariate_columns)) 
-    stop("column numbers of adjusting covariates must be provided!")
-  if(is.null(outcome_column)) stop("column number of outcome must be provided!")
-  if(is.null(exposure_coeff)) stop("external coefficients  must be provided!")
-  if (length(exposure_coeff) != length(genotype_columns)) 
-    stop("the number of genetypes are not consistent with the number of coefficients!")
-  if (sum(names(exposure_coeff) %in% colnames(data)[genotype_columns]) != length(exposure_coeff)) 
-    stop("names of genotypes in the dataframe are not consistant with names of coefficients!")
-  if (verbose) writeLines(paste0("program starts at: ",gettime()))
+  if (class(formula)=="character") formula=as.formula(formula)
+  #check intput
+  checkdata(formula,exposure_coeff,genotype_columns,data)
+  if (verbose) writeLines(paste0("GLIDE program starts at: ",gettime()))
   #remvoe rows containing NAs in the related columns
-  idx=remove_missingdata(data[,c(genotype_columns,adjusting_covariate_columns,outcome_column)])
+  idx=remove_missingdata(data)
   data=data[idx,]
   nsnp=length(exposure_coeff)
   outcome_coeff <- matrix(0,nsnp,2)
+  formularchr=as.character(formula)
   for (i in 1:nsnp){
-    fm=paste0(colnames(data)[outcome_column],"~",colnames(data)[which(colnames(data)==names(exposure_coeff)[i])])
-    for (j in 1:length(adjusting_covariate_columns))
-    {
-      fm=paste0(fm,"+",colnames(data)[which(colnames(data)==colnames(data)[adjusting_covariate_columns[j]])])
-    }
+    snp=names(exposure_coeff)[i]
+    fm=as.formula(paste0(formularchr[2],"~",snp,"+",formularchr[3]))
     fit <- glm(as.formula(fm),family=binomial,data=data)
     outcome_coeff[i,1] <- fit$coef[2]
     #variance
     outcome_coeff[i,2] <- summary(fit)$coef[2,2]^2
   }
-
+  
   data$grs <- 0
   for (i in 1:nsnp){
     k<- which(colnames(data)==names(exposure_coeff)[i])
     data$grs <- data$grs + exposure_coeff[i]*data[,k]
   }
-
+  
   outp <- rep(0,nsnp)
   for (i in 1:nsnp) {
-    k <- which(colnames(data)==names(exposure_coeff[i]))
-    fm=paste0(colnames(data)[outcome_column],"~grs+",colnames(data)[which(colnames(data)==names(exposure_coeff)[i])])
-    for (j in 1:length(adjusting_covariate_columns))
-    {
-      fm=paste0(fm,"+",colnames(data)[which(colnames(data)==colnames(data)[adjusting_covariate_columns[j]])])
-    }
+    snp=names(exposure_coeff)[i]
+    fm=as.formula(paste0(formularchr[2],"~grs+",snp,"+",formularchr[3]))
     fit <- glm(as.formula(fm),family=binomial,data=data)
     outp[i] <- summary(fit)$coef[3,4]
   }
-
+  
   ### now work out the correlation matrix under the null hypothesis ####
-
-  fm=paste0(colnames(data)[outcome_column],"~grs+")
-  for (j in 1:length(adjusting_covariate_columns))
-  {
-    fm=paste0(fm,"+",colnames(data)[which(colnames(data)==colnames(data)[adjusting_covariate_columns[j]])])
-  }
-
+  
+  fm=as.formula(paste0(formularchr[2],"~grs+",formularchr[3]))
   fit <- glm(as.formula(fm),family=binomial,data=data,y=TRUE)
   yfit <- fit$fitted.values
   y <-fit$y #outcome
@@ -78,10 +60,10 @@ glide <- function(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
   # #storage.mode(x) <- storage.mode(y) <- "double"
   if (verbose) 
   {
-    writeLines(paste0("Start to compute the correlation matrix at: ",gettime()))
+    writeLines(paste0("Compute the correlation matrix at: ",gettime()))
     cat(paste0("Total ",nsnp," iterations... "))
   }
-    
+  
   if (parallel)
   {
     #detect the number of CPU cores in the current machine
@@ -92,7 +74,7 @@ glide <- function(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
     #if there are much more cores available, use half of them
     if (2*corenumber<=numberofcores) corenumber=as.integer(numberofcores/2)
     registerDoMC(cores=corenumber)
-    if (verbose) writeLines(paste0("Start parallel computation using ",corenumber," cores..."))
+    if (verbose) writeLines(paste0("Start parallel computation of the correlation matrix using ",corenumber," cores..."))
     #i=nsnp:1, do small jobs first to make sure the last job to finish in the last
     results <- foreach(i=nsnp:1,j=1:nsnp,.combine = data.frame, .packages = c("GLIDE")) %dopar%
     {
@@ -116,7 +98,7 @@ glide <- function(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
       result$cormat_col
     }
     for (i in 1:nsnp) cormat[,i]=results[,nsnp-i+1]
-
+    
     for (i in 1:nsnp) cormat[i,i]=1
     for (i in 1:(nsnp-1))
     {
@@ -153,7 +135,7 @@ glide <- function(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
   cormat=as.matrix(cormat)
   
   zsim <- matrix(0,np,nsnp)
-  if (verbose) writeLines(paste0("Start to compute the null p-value at: ", gettime()))
+  if (verbose) writeLines(paste0("Compute the null p-value at: ", gettime()))
   
   zsim[,1] <- rnorm(np,0,1)
   if (parallel)
@@ -176,12 +158,12 @@ glide <- function(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
   }
   for (k in 1:nsnp) zsim[,k] <- 2*(1-pnorm(abs(zsim[,k])))
   for (k in 1:np) {
-      zsim[k,] <- zsim[k,order(zsim[k,])]
+    zsim[k,] <- zsim[k,order(zsim[k,])]
   }
   
   
-  if (verbose) writeLines(paste0("\nStart to compute the FWER and FDR values at: ",gettime()))
- 
+  if (verbose) writeLines(paste0("\nCompute the FWER and FDR values at: ",gettime()))
+  
   orderp <- apply(zsim,2,mean)
   
   ### compute the FWER and FDR values for each observed p-value
@@ -195,7 +177,7 @@ glide <- function(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
   }
   out <- matrix(0,nsnp,7)
   out[,1] <- outp
-  out[,2] <- orderp[order(outp)]
+  out[,2] <- orderp[rank(outp)]
   out[,3] <- fwer
   out[,4] <- qval
   qval <- rep(0,length(outp))
@@ -209,8 +191,8 @@ glide <- function(data,genotype_columns=NULL,adjusting_covariate_columns=NULL,
                   "geffect_outcome","geffect_outcome_variance")
   rownames(out)=names(exposure_coeff)
   
-  if (verbose) writeLines(paste0("\nProgram ends at: ",gettime()))
-#  glide_plot(out,qcutoff)
+  if (verbose) writeLines(paste0("\nGLIDE program ends at: ",gettime()))
+  #  glide_plot(out,qcutoff)
   
   return(out)
 }
