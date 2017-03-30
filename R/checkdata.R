@@ -16,15 +16,23 @@ checkdata <- function(formula,exposure_coeff,genotype_columns,data)
     formula=as.formula(formula)
   
   #check data related to formula
-  res=tryCatch(glm(formula,data=data),error = function(err){stop(paste0("When check the data related to formula,", err))})
+  outcome=as.character(formula)[2]
+  if (class(data[,outcome])=="factor")
+  {
+    res=tryCatch(glm(formula,family="binomial",data=data),error = function(err){stop(paste0("When check the data related to formula,", err))})
+  }else
+  {
+    res=tryCatch(glm(formula,data=data),error = function(err){stop(paste0("When check the data related to formula,", err))})
+  }
+  
   #check the exposure coefficients
   if (is.null(names(exposure_coeff)) | class(exposure_coeff) != "numeric") 
     stop("The exposure coefficients should be a named vector.")
   for (i in 1:length(exposure_coeff))
   {
     if (! names(exposure_coeff)[i] %in% colnames(data))
-      stop(paste0("Exposure coefficient: ",names(exposure_coeff)[i]," is not in the data frame."))
+      stop(paste0("Exposure coefficient: ",names(exposure_coeff)[i]," is not found in the data frame."))
   }
   if (sum(names(exposure_coeff) %in% colnames(data)[genotype_columns]) != length(exposure_coeff)) 
-    stop("some snps with exposure coefficients were not found in the data frame")
+    stop("some exposure coefficients were not found in the genotype_columns of data frame")
 }
