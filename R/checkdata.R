@@ -1,6 +1,11 @@
 checkdata <- function(formula,exposure_coeff,genotype_columns,data)
 {
-
+  if (class(exposure_coeff)=="data.frame")
+  {
+    tmp=exposure_coeff[,1]
+    names(tmp)=rownames(exposure_coeff)
+    exposure_coeff=tmp
+  }
   call=match.call()
   indx <- match(c("formula", "exposure_coeff" ,"genotype_columns","data"),
                 names(call), nomatch = 0L)
@@ -27,7 +32,7 @@ checkdata <- function(formula,exposure_coeff,genotype_columns,data)
   
   #check the exposure coefficients
   if (is.null(names(exposure_coeff)) | class(exposure_coeff) != "numeric") 
-    stop("The exposure coefficients should be a named vector.")
+    stop("The exposure coefficients should be a named vector or dataframe.")
   for (i in 1:length(exposure_coeff))
   {
     if (! names(exposure_coeff)[i] %in% colnames(data))

@@ -1,0 +1,12 @@
+ \newcommand{\noop}[1]{}
+\begin{thebibliography}{1}
+
+\bibitem{Dai2017}
+J.~Y. Dai, U.~Peters, X.~Wang, J.~Kocarnik, J.~Chang-Claude, M.~L. Slattery,
+  A.~Chan, M.~Lemire, S.~I. Berndt, G.~Casey, M.~Song, M.~A. Jenkins,
+  H.~Brenner, A.~P. Thrift, E.~White, and L.~Hsu.
+\newblock Diagnostics of pleiotropy in mendelian randomization studies: Global
+  and individual tests for direct effects.
+\newblock {\em The American Journal of Human Genetics}, \noop{2017}in press.
+
+\end{thebibliography}

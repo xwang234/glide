@@ -1,6 +1,6 @@
 
 glide <- function(formula,exposure_coeff=NULL,genotype_columns=NULL,data,
-                  np=100000,qcutoff=0.2,parallel=TRUE,corenumber=4,verbose=TRUE)
+                  np=100000,qcutoff=0.2,parallel=TRUE,corenumber=1,verbose=TRUE)
 {
   gettime=function()
   {
@@ -8,6 +8,12 @@ glide <- function(formula,exposure_coeff=NULL,genotype_columns=NULL,data,
     thetime=as.character(structure(thetime,class=c('POSIXt','POSIXct')))
   }
   if (class(formula)=="character") formula=as.formula(formula)
+  if (class(exposure_coeff)=="data.frame")
+  {
+    tmp=exposure_coeff[,1]
+    names(tmp)=rownames(exposure_coeff)
+    exposure_coeff=tmp
+  }
   #check intput
   checkdata(formula,exposure_coeff,genotype_columns,data)
   if (verbose) writeLines(paste0("GLIDE program starts at: ",gettime()))
@@ -49,9 +55,9 @@ glide <- function(formula,exposure_coeff=NULL,genotype_columns=NULL,data,
   xmat=model.matrix(as.formula(fm),data=data)
   grs=data$grs
   #generate genotype matrix, which columns are consistent with exposure_coeff
-  data_genotype=data.frame(matrix(NA,nrow=nrow(data),ncol=length(exposure_coeff)))
+  data_genotype=data.frame(matrix(NA,nrow=nrow(data),ncol=nsnp))
   colnames(data_genotype)=names(exposure_coeff)
-  for (i in 1:length(exposure_coeff))
+  for (i in 1:nsnp)
   {
     idx=which(colnames(data)==names(exposure_coeff)[i])
     data_genotype[,i]=data[,idx]
@@ -68,13 +74,16 @@ glide <- function(formula,exposure_coeff=NULL,genotype_columns=NULL,data,
   {
     #detect the number of CPU cores in the current machine
     numberofcores=detectCores()
-    if (verbose) writeLines(paste0("\nThere are ",numberofcores," cores available in the machine."))
+    if (verbose) 
+      writeLines(paste0("\nThere are ",numberofcores," cores available in the machine."))
     #if there are not enough cores available
     if (corenumber>numberofcores) corenumber=numberofcores
     #if there are much more cores available, use half of them
-    if (2*corenumber<=numberofcores) corenumber=as.integer(numberofcores/2)
-    registerDoParallel(cores=corenumber)
-    if (verbose) writeLines(paste0("Start parallel computation of the correlation matrix using ",corenumber," cores..."))
+    #if (2*corenumber<=numberofcores) corenumber=as.integer(numberofcores/2)
+    cl <- makeCluster(corenumber)
+    registerDoParallel(cl)
+    if (verbose) 
+      writeLines(paste0("Start parallel computation of the correlation matrix using ",corenumber," cores..."))
     #i=nsnp:1, do small jobs first to make sure the last job to finish in the last
     results <- foreach(i=nsnp:1,j=1:nsnp,.combine = data.frame, .packages = c("GLIDE")) %dopar%
     {
@@ -135,7 +144,7 @@ glide <- function(formula,exposure_coeff=NULL,genotype_columns=NULL,data,
   cormat=as.matrix(cormat)
   
   zsim <- matrix(0,np,nsnp)
-  if (verbose) writeLines(paste0("Compute the null p-value at: ", gettime()))
+  if (verbose) writeLines(paste0("Compute the null p-values at: ", gettime()))
   
   zsim[,1] <- rnorm(np,0,1)
   if (parallel)
@@ -153,8 +162,10 @@ glide <- function(formula,exposure_coeff=NULL,genotype_columns=NULL,data,
     {
       mu <- drop(zsim[,1:(k-1)] %*% ginv(cormat[1:(k-1),1:(k-1)]) %*% cormat[1:(k-1),k])
     }
-    if (k !=nsnp) sig<- sqrt(1- drop(cormat[1:(k-1),k] %*% ginv(cormat[1:(k-1),1:(k-1)]) %*% cormat[1:(k-1),k]))
-    if (k !=nsnp) zsim[,k] <- rnorm(np,mu,sig) else zsim[,k] <- mu
+    if (k !=nsnp) 
+      sig<- sqrt(1- drop(cormat[1:(k-1),k] %*% ginv(cormat[1:(k-1),1:(k-1)]) %*% cormat[1:(k-1),k]))
+    if (k !=nsnp) 
+      zsim[,k] <- rnorm(np,mu,sig) else zsim[,k] <- mu
   }
   for (k in 1:nsnp) zsim[,k] <- 2*(1-pnorm(abs(zsim[,k])))
   for (k in 1:np) {
@@ -175,7 +186,7 @@ glide <- function(formula,exposure_coeff=NULL,genotype_columns=NULL,data,
     fwer[i] <- mean(temp>=1)
     qval[i] <- (sum(temp)/np)/sum(outp<=outp[i])
   }
-  out <- matrix(0,nsnp,7)
+  out <- data.frame(matrix(0,nsnp,7))
   out[,1] <- outp
   out[,2] <- orderp[rank(outp)]
   out[,3] <- fwer
@@ -193,6 +204,8 @@ glide <- function(formula,exposure_coeff=NULL,genotype_columns=NULL,data,
   
   if (verbose) writeLines(paste0("\nGLIDE program ends at: ",gettime()))
   #  glide_plot(out,qcutoff)
-  
+  if (parallel)
+    stopCluster(cl)
+  class(out)=c(class(out),"glide","egger")
   return(out)
 }

@@ -59,7 +59,7 @@
 
 Take current investigations on body mass index (BMI) and risk of colorectal cancer for example. Using seventy seven genome-wide significant SNPs for high BMI in the GIANT consortium study, several Mendelian randomization studies have reported strong evidence of causal relationship between BMI and colorectal cancer risk. However, as revealed by the GIANT consortium study, BMI is one of many metabolic phenotypes, and many BMI-associated SNPs are also associated with other metabolic phenotypes such as type2 diabetes, higher high-density lipoprotein cholesterol (HDL), and coronary artery diseases (CAD). Pathway analysis therein suggested that risk loci involve in central nervous system, glutamate signalling, energy metabolism, lipid biology and adipogenesis, underscoring the heterogeneous aetiology of obesity. Possibility of pleiotropy for these 77 SNPs, or a subset of them, is not dismissable. Methodologies for detecting pleiotropy and, more ambitiously, estimating causal effect in the presence of pleiotropy have been under active development. 
 
-we propose \Rpackage{GLIDE}, GLobal and Individual tests for Direct Effects, a statistical method to assess pleiotropy and refine IVs for Mendelian randomization. Causal effects are defined in relative risk, a measure that is collapsible and well interpretable for binary disease endpoints. Though not all direct effects defined in a joint causal model are identifiable, we show that ``marginal'' direct effects, the direct effect for one individual variant that is not conditional on other direct effects, are estimable and provide valid tests for individual direct effects. A quantile-quantile plot is proposed to examine the degree of pleiotropy graphically. A parametric simulation procedure gives the significance of pleiotropic effect for any given variant, as well as evidence of global violation. Based on the proposed method, investigators can determine whether the set of genetic variants being considered for IVs are grossly invalid, or a subset of them appears trustworthy for Mendelian randomization. Our comprehensive simulation results suggest that the proposed test is nearly uniformly more sensitive than the Egger regression. When used to reanalyze BMI, height and colorectal cancer risk in the Genetics and Epidemiology of Colorectal Cancer Consortium (GECCO), our method suggests that at least several variants among the SNPs being used as IVs exhibit strong evidence of pleiotropy and therefore should be excluded in Mendelian randomization.
+we propose \Rpackage{GLIDE}, GLobal and Individual tests for Direct Effects, a statistical method to assess pleiotropy and refine IVs for Mendelian randomization \cite{Dai2017}. Causal effects are defined in relative risk, a measure that is collapsible and well interpretable for binary disease endpoints. Though not all direct effects defined in a joint causal model are identifiable, we show that ``marginal'' direct effects, the direct effect for one individual variant that is not conditional on other direct effects, are estimable and provide valid tests for individual direct effects. A quantile-quantile plot is proposed to examine the degree of pleiotropy graphically. A parametric simulation procedure gives the significance of pleiotropic effect for any given variant, as well as evidence of global violation. Based on the proposed method, investigators can determine whether the set of genetic variants being considered for IVs are grossly invalid, or a subset of them appears trustworthy for Mendelian randomization. Our comprehensive simulation results suggest that the proposed test is nearly uniformly more sensitive than the Egger regression. When used to reanalyze BMI, height and colorectal cancer risk in the Genetics and Epidemiology of Colorectal Cancer Consortium (GECCO), our method suggests that at least several variants among the SNPs being used as IVs exhibit strong evidence of pleiotropy and therefore should be excluded in Mendelian randomization.
 
 
 
@@ -70,28 +70,28 @@ library(GLIDE)
 
 \section{Main function}
 
-We show an example of applying the function on a dataset from GECCO. 
+We show an example simulation data. 
 First we load the example dataset:
 <<data>>=
-data(BMI)
-str(exposure_coeff)
-dim(dat)
+data(simdata)
+ls()
 @
 
 We find the columns in dat that contain genotype data:
 <<genotype_columns>>=
-genotype_columns=which(grepl("^rs",colnames(dat)))
+genotype_columns=which(grepl("^SNP",colnames(simdat)))
 @
 
 We feed in the formula of outcome ~ adjusting covariates:
 <<formula>>=
-formula=as.formula("outcome~as.factor(gecco_study)+age_ref+sex+pc1+pc2+pc3")
+formula=as.formula("outcome~age+sex+pc1+pc2+pc3")
 formula
 @
 
 We then run the glide function:
 <<out>>=
-out=glide(formula=formula,exposure_coeff=exposure_coeff,genotype_columns,data=dat,np=100000,qcutoff=0.2,parallel=TRUE,corenumber=4,verbose=TRUE)
+out=glide(formula=formula,exposure_coeff=coeff,genotype_columns,data=simdat,np=100000,
+qcutoff=0.2,parallel=TRUE,corenumber=1,verbose=TRUE)
 head(out)
 @
 
@@ -108,6 +108,8 @@ cat('\\includegraphics{', file, '}\n', sep = '')
 cat('\\end{figure}\n')
 @
 
+
+
 \section{session information}
 
 The version number of \R{} and packages loaded for generating the vignette were:
@@ -118,7 +120,8 @@ sessionInfo()
 @
 \end{verbatim}
 
-% \bibliographystyle{plain}
-% \bibliography{GLIDE}
+\bibliographystyle{plain}
+\bibliography{GLIDE}
+ 
 
 \end{document}

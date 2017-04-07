@@ -8,21 +8,25 @@ A function used to draw Egger plot
 It is used to draw MR-Egger regression plot
 }
 \usage{
-plot.egger(out,qcutoff=0.2,xlable="Genetic association with the exposure",ylable="Genetic association with the outcome")
+\method{plot}{egger}(x,qcutoff=0.2,xlab="Genetic association with the exposure",
+                       ylab="Genetic association with the outcome",...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{out}{
-out is a dataframe, it is the outcome of the glide function.
+\item{x}{
+x is a dataframe, it is the outcome of the glide function.
 }
 \item{qcutoff}{
 qcutoff is the q-value cutoff.
 }
-\item{xlable}{
-xlable is the lable of x-axis.
+\item{xlab}{
+xlab is the default x label.
 }
-\item{ylable}{
-ylable is the lable of y-axis.
+\item{ylab}{
+ylab is the default y label.
+}
+\item{...}{
+the rest plot arguments.
 }
 }
 
@@ -31,13 +35,15 @@ James Y. Dai and X. Wang
 }
 
 \examples{
+\dontrun{
 #first generate output using the glide function
-##load an example data; it includes a dataframe "dat" and a named numeric vector  exposure_coeff
-data(BMI)
-formula=as.formula("outcome~as.factor(gecco_study)+age_ref+sex+pc1+pc2+pc3")
-genotype_columns=which(grepl("^rs",colnames(dat)))
-out=glide(formula=formula,exposure_coeff=exposure_coeff,genotype_columns,data=dat,np=100000,qcutoff=0.2,parallel=TRUE,corenumber=4,verbose=TRUE)
-
+##load an example data; it includes a dataframe "simdat" and a one-column dataframe  "coeff"
+data(simdata)
+formula=as.formula("outcome~age+sex+pc1+pc2+pc3")
+genotype_columns=which(grepl("^SNP",colnames(simdat)))
+out=glide(formula=formula,exposure_coeff=coeff,genotype_columns,data=simdat,
+np=100000,qcutoff=0.2,parallel=TRUE,corenumber=4,verbose=TRUE)
 ##draw the plot
 plot.egger(out)
+}
 }
