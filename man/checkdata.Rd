@@ -13,7 +13,7 @@ checkdata(formula,exposure_coeff,genotype_columns,data)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{formula}{
-A an object of class "formula": outcome ~ adusting covariates.
+A an object of class "formula": outcome ~ adjusting covariates.
 }
   \item{exposure_coeff}{
 A named mumeric vector or a one-column dataframe for the external coefficients 
@@ -34,7 +34,9 @@ James Y. Dai and X. Wang
 \examples{
 #load an example data; it includes a dataframe "simdat" and a one-column dataframe  "coeff"
 data(simdata)
+simdat=simdata$simdat
+coeff=simdata$coeff
 formula=as.formula("outcome~age+sex+pc1+pc2+pc3")
 genotype_columns=which(grepl("^SNP",colnames(simdat)))
-valid=checkdata(formula=formula,exposure_coeff=coeff,genotype_columns,data=simdat)
+checkdata(formula=formula,exposure_coeff=coeff,genotype_columns,data=simdat)
 }

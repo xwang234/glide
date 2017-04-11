@@ -1,18 +1,17 @@
 Package: GLIDE
 Type: Package
 Title: Global and Individual Tests for Direct Effects
-Version: 1.0.1
+Version: 1.0.0
 Date: 2017-04-07
 Authors@R: c(person("James", "Dai", role = c("aut", "cre"),
 		     email = "jdai@fredhutch.org"),
 	      person("Xiaoyu", "Wang", role = c("aut")))
-Author: James Dai [aut, cre],
-	Xiaoyu Wang [aut]
+Author: James Dai [aut, cre], Xiaoyu Wang [aut]
 Maintainer: James Dai <jdai@fredhutch.org>
 Description: Functions evaluate global and individual tests for direct effects in Mendelian randomization studies.
 Depends: R (>= 2.10)
 Imports: MASS,foreach,parallel,doParallel
 LazyLoad: no
 License: GPL (>= 2)
-NeedsCompilation: no
-Packaged: 2017-04-07 08:10:34 UTC; wang
+NeedsCompilation: yes
+Packaged: 2017-04-11 09:57:50 UTC; yulin

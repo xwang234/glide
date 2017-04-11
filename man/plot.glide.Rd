@@ -20,7 +20,7 @@ x is a dataframe, it is the outcome of the glide function.
 qcutoff is the q-value cutoff.
 }
   \item{xlab}{
-  xlab is the default x label.
+xlab is the default x label.
 }
   \item{ylab}{
 ylab is the default y label.
@@ -36,13 +36,19 @@ James Y. Dai and X. Wang
 
 \examples{
 \dontrun{
-#first generate output using the glide function
-##load an example data; it includes a dataframe "simdat" and a one-column dataframe  "coeff"
+##first generate output using the glide function
+#load an example data
 data(simdata)
+simdat=simdata$simdat
+coeff=simdata$coeff
+
 formula=as.formula("outcome~age+sex+pc1+pc2+pc3")
 genotype_columns=which(grepl("^SNP",colnames(simdat)))
-out=glide(formula=formula,exposure_coeff=coeff,genotype_columns,data=simdat,
-np=100000,qcutoff=0.2,parallel=TRUE,corenumber=4,verbose=TRUE)
+
+#run glide
+out=glide(formula=formula,exposure_coeff=coeff,genotype_columns,data=simdat,np=100000,
+qcutoff=0.2,parallel=TRUE,corenumber=1,verbose=TRUE)
+
 ##draw the plot
 plot.glide(out)
 }

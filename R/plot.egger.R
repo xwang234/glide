@@ -3,25 +3,25 @@ plot.egger <- function(x,qcutoff=0.2,xlab="Genetic association with the exposure
 {
   x=as.data.frame(x)
   
-  yy <- x$geffect_outcome
-  xx <- cbind(1,x$geffect_exposure)
-  ww <- diag(1/x$geffect_outcome_variance)
+  yy <- x$g_outcome
+  xx <- cbind(1,x$g_exposure)
+  ww <- diag(1/x$g_outcome_variance)
   bb <- solve(t(xx) %*% ww %*% xx) %*% t(xx) %*% ww %*% yy
   bbcov<- solve(t(xx) %*% ww %*% xx)
   #SNPs with evidence of direct effect by GLIDE based on the selected q-value cutoff
   selected_idx=which(x$q_value<=qcutoff)
-  xmax=max(x$geffect_exposure)
+  xmax=max(x$g_exposure)
   xmax1=1.2*xmax
-  xmin=min(x$geffect_exposure)
+  xmin=min(x$g_exposure)
   xmin1=xmin-0.2*xmax
   if (xmin1<0) xmin1=0
   
-  ymax=max(x$geffect_outcome)
+  ymax=max(x$g_outcome)
   ymax1=1.2*ymax
-  ymin=min(x$geffect_outcome)
+  ymin=min(x$g_outcome)
   ymin1=ymin-0.3*ymax
 
-  plot(x$geffect_exposure,x$geffect_outcome,xlim=c(xmin1,xmax1),
+  plot(x$g_exposure,x$g_outcome,xlim=c(xmin1,xmax1),
        ylim=c(ymin1,ymax1),xlab=xlab,ylab=ylab,...)
   abline(bb[1],bb[2],lty=2)
   x1=mean(par("usr")[1:2])+0.25*par("usr")[2]
@@ -32,7 +32,7 @@ plot.egger <- function(x,qcutoff=0.2,xlab="Genetic association with the exposure
   
   if (length(selected_idx)>0)
   {
-    points(x$geffect_exposure[selected_idx],x$geffect_outcome[selected_idx],
+    points(x$g_exposure[selected_idx],x$g_outcome[selected_idx],
            col=2,pch=16,cex=1.2*par("cex"))
     legend1=c(legend1,"SNPs with evidence of direct effect by GLIDE")
   }

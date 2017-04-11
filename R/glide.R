@@ -67,7 +67,7 @@ glide <- function(formula,exposure_coeff=NULL,genotype_columns=NULL,data,
   if (verbose) 
   {
     writeLines(paste0("Compute the correlation matrix at: ",gettime()))
-    cat(paste0("Total ",nsnp," iterations... "))
+    cat(paste0("Total ",nsnp," SNPs... "))
   }
   
   if (parallel)
@@ -82,7 +82,7 @@ glide <- function(formula,exposure_coeff=NULL,genotype_columns=NULL,data,
     #if (2*corenumber<=numberofcores) corenumber=as.integer(numberofcores/2)
     cl <- makeCluster(corenumber)
     registerDoParallel(cl)
-    if (verbose) 
+    if (verbose & corenumber>1) 
       writeLines(paste0("Start parallel computation of the correlation matrix using ",corenumber," cores..."))
     #i=nsnp:1, do small jobs first to make sure the last job to finish in the last
     results <- foreach(i=nsnp:1,j=1:nsnp,.combine = data.frame, .packages = c("GLIDE")) %dopar%
@@ -186,7 +186,7 @@ glide <- function(formula,exposure_coeff=NULL,genotype_columns=NULL,data,
     fwer[i] <- mean(temp>=1)
     qval[i] <- (sum(temp)/np)/sum(outp<=outp[i])
   }
-  out <- data.frame(matrix(0,nsnp,7))
+  out <- data.frame(matrix(0,nsnp,6))
   out[,1] <- outp
   out[,2] <- orderp[rank(outp)]
   out[,3] <- fwer
@@ -196,16 +196,16 @@ glide <- function(formula,exposure_coeff=NULL,genotype_columns=NULL,data,
     qval[i] <- min(out[out[,1]>= out[i,1],4])
   }
   out[,4] <- qval
-  out[,5] <- exposure_coeff
-  out[,6:7] <- outcome_coeff
-  colnames(out)=c("observed_pvalue","expected_pvalue","fwer","q_value","geffect_exposure",
-                  "geffect_outcome","geffect_outcome_variance")
+  out[,5:6] <- outcome_coeff
+  colnames(out)=c("observed_pvalue","expected_pvalue","fwer","q_value",
+                  "g_outcome","g_outcome_variance")
   rownames(out)=names(exposure_coeff)
   
   if (verbose) writeLines(paste0("\nGLIDE program ends at: ",gettime()))
   #  glide_plot(out,qcutoff)
   if (parallel)
     stopCluster(cl)
+  out=out[order(out$observed_pvalue),]
   class(out)=c(class(out),"glide","egger")
   return(out)
 }

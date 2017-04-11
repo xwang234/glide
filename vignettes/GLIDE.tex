@@ -72,18 +72,16 @@ First we load the example dataset:
 \begin{Schunk}
 \begin{Sinput}
 > data(simdata)
-> str(coeff)
+> simdat=simdata$simdat
+> coeff=simdata$coeff
+> ls()
 \end{Sinput}
 \begin{Soutput}
-'data.frame':	75 obs. of  1 variable:
- $ coeff: num  0.0192 0.023 0.0229 0.0307 0.0174 0.0402 0.0249 0.0414 0.0307 0.0207 ...
+[1] "coeff"   "simdat"  "simdata"
 \end{Soutput}
 \begin{Sinput}
-> dim(simdat)
+> 
 \end{Sinput}
-\begin{Soutput}
-[1] 20000    81
-\end{Soutput}
 \end{Schunk}
 
 We find the columns in dat that contain genotype data:
@@ -108,41 +106,41 @@ We then run the glide function:
 \begin{Schunk}
 \begin{Sinput}
 > out=glide(formula=formula,exposure_coeff=coeff,genotype_columns,data=simdat,np=100000,
-+ qcutoff=0.2,parallel=TRUE,corenumber=4,verbose=TRUE)
++ qcutoff=0.2,parallel=TRUE,corenumber=1,verbose=TRUE)
 \end{Sinput}
 \begin{Soutput}
-GLIDE program starts at: 2017-04-06 14:38:49
+GLIDE program starts at: 2017-04-07 15:46:54
 Warning message: 3 rows were removed due to missing data in age
-Compute the correlation matrix at: 2017-04-06 14:39:04
+Compute the correlation matrix at: 2017-04-07 15:47:08
 Total 75 iterations... 
 There are 56 cores available in the machine.
-Start parallel computation of the correlation matrix using 28 cores...
-10 ..20 ..30 ..40 ..50 ..60 ..70 ..
+Start parallel computation of the correlation matrix using 1 cores...
 
-Compute the null p-values at: 2017-04-06 14:39:08
 
-Compute the FWER and FDR values at: 2017-04-06 14:39:14
+Compute the null p-values at: 2017-04-07 15:47:34
 
-GLIDE program ends at: 2017-04-06 14:39:20
+Compute the FWER and FDR values at: 2017-04-07 15:47:40
+
+GLIDE program ends at: 2017-04-07 15:47:45
 \end{Soutput}
 \begin{Sinput}
 > head(out)
 \end{Sinput}
 \begin{Soutput}
-      observed_pvalue expected_pvalue fwer   q_value geffect_exposure
-SNP66       0.7441336       0.7104385    1 0.9546985           0.0192
-SNP56       0.5749483       0.4736940    1 0.9546985           0.0230
-SNP10       0.5298893       0.4341020    1 0.9546985           0.0229
-SNP11       0.6580545       0.5658927    1 0.9546985           0.0307
-SNP38       0.6081994       0.5132223    1 0.9546985           0.0174
-SNP24       0.2281449       0.1843605    1 0.9546985           0.0402
+      observed_pvalue expected_pvalue    fwer   q_value geffect_exposure
+SNP60     0.001555538      0.01325675 0.11187 0.1184700           0.0311
+SNP48     0.007731389      0.02651071 0.43837 0.2895750           0.0217
+SNP45     0.018526927      0.03965160 0.75201 0.4638500           0.0395
+SNP49     0.036145821      0.05272909 0.93554 0.5603487           0.0198
+SNP43     0.037575697      0.06596899 0.94219 0.5603487           0.0308
+SNP3      0.050387996      0.07917660 0.97884 0.5603487           0.0211
       geffect_outcome geffect_outcome_variance
-SNP66    0.0128341459             0.0005409850
-SNP56   -0.0050849965             0.0004831153
-SNP10    0.0201420507             0.0005219733
-SNP11   -0.0005206437             0.0004176231
-SNP38   -0.0052922337             0.0004335742
-SNP24    0.0354267738             0.0004177052
+SNP60      0.08377947             0.0005712880
+SNP48     -0.04846745             0.0004120537
+SNP45     -0.10059746             0.0022840654
+SNP49      0.05428275             0.0005370443
+SNP43      0.07930513             0.0011821317
+SNP3       0.04835978             0.0004534040
 \end{Soutput}
 \end{Schunk}
 
@@ -151,6 +149,8 @@ We draw the q-q plot: plot.glide(out)
 We draw the Egger plot: plot.egger(out)
 The figures are shown as follows:
 \begin{figure}[h]\includegraphics{./plot.png}\end{figure}
+
+
 \section{session information}
 
 The version number of \R{} and packages loaded for generating the vignette were:

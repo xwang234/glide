@@ -74,7 +74,10 @@ We show an example simulation data.
 First we load the example dataset:
 <<data>>=
 data(simdata)
+simdat=simdata$simdat
+coeff=simdata$coeff
 ls()
+
 @
 
 We find the columns in dat that contain genotype data:
@@ -91,7 +94,7 @@ formula
 We then run the glide function:
 <<out>>=
 out=glide(formula=formula,exposure_coeff=coeff,genotype_columns,data=simdat,np=100000,
-qcutoff=0.2,parallel=TRUE,corenumber=4,verbose=TRUE)
+qcutoff=0.2,parallel=TRUE,corenumber=1,verbose=TRUE)
 head(out)
 @
 
